@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBZnvqy9HEpG-LAQwm_AxDOegMciI9jgP4&libraries=geometry&sensor=false"></script>
+<script type="text/javascript" src="out.txt"></script> 
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+var map;
+var greenCircle;
+var layer;
+
+
+function initialize() {
+          var mapOptions = {
+            zoom: 15,
+            center: new google.maps.LatLng(42.350296,-71.088274),
+            mapTypeId: google.maps.MapTypeId.ROAD
+          };
+
+
+
+          map = new google.maps.Map(document.getElementById('map'),
+              mapOptions);
+
+          var styles = [
+  {
+    "stylers": [
+      { "visibility": "simplified" },
+      { "hue": "#00b2ff" },
+      { "weight": 0.5 },
+      { "saturation": -51 },
+      { "gamma": 1.26 },
+      { "lightness": 75 }
+    ]
+  }
+]
+
+map.setOptions({styles: styles});
+
+var greenOverlay = new GreenOverlay({map:map});
+
+
+// layer = new google.maps.FusionTablesLayer({
+//  query: {
+//      from: '1pdt2dfIn4B0k9h-wT_MIdmwqfyqWYkEhDi8E7yI'
+
+
+//  }
+    // styles: [{
+    //  markerOptions :{
+    //          fillColor : 'blue',
+    //          fillOpacity : 'opacity',
+    //          strokeColor : 'red',
+    //          strokeOpacity : 'opacity'
+    //      }
+    //  }, {
+    //      where: 'opacity >= 0.05',
+    //      markerOptions:{
+    //          fillColor : '#359E11',
+    //              strokeColor : 'red',
+    //              fillOpacity : 'opacity' + 0.1,
+    //              strokeOpacity : 'opacity' + 0.1 
+    //      }
+    //  }
+    // ]
+// });
+
+//layer.setMap(map);
+        
+
+
+}
+
+function GreenOverlay(options) {
+    this.setValues(options);
+    this.markerLayer = $('<div />').addClass('overlay');
+};
+
+GreenOverlay.prototype = new google.maps.OverlayView;
+
+GreenOverlay.prototype.onAdd = function(){
+    var $pane = $(this.getPanes().overlayImage);
+    $pane.append(this.markerLayer);
+};
+GreenOverlay.prototype.onRemove = function()  
+{  
+    this.markerLayer.remove();  
+};  
+
+
+GreenOverlay.prototype.draw = function(){
+    var projection = this.getProjection();
+    var zoom = this.getMap().getZoom();
+    var fragment = document.createDocumentFragment();
+
+    this.markerLayer.empty();
+
+    for (var i in data){
+        var color;
+        var opacity = data[i].opacity;
+        var latLng = data[i].centre;
+        var $point;
+
+        var screenLocation = projection.fromLatLngToDivPixel(latLng);
+        //console.log("loc = " + screenLocation);
+
+        if (opacity > 0.05 ){
+            
+            var str;
+            if (opacity <0.075){
+                color = 'green1.png';
+                str="green1";
+            } 
+            else if (opacity > 0.075 && opacity < 0.1){
+                color = 'green2.png';
+                str="green2";
+            } 
+
+            else if (opacity >0.1 && opacity <0.125){
+                color = 'green3.png';
+                str="green3";
+            } 
+            else if (opacity > 0.125 && opacity < 0.15) {
+                color = 'green4.png';
+                str="green4";
+            } 
+            else {
+                color = 'green5.png';
+                str="green5";
+            }
+
+            console.log("op = " + opacity + " c = " + str);
+            //console.log("op = " + opacity + "col = " + color );
+
+            if (zoom >=16){
+
+                var randomIndex = 1 + Math.floor(Math.random() * (5));
+
+                var icon = 'plant'+randomIndex+'.png';
+                //console.log("randomIndex = " + randomIndex);
+                opacity = 0.8;
+
+                $point =  $('<div '  
+                                +'class="map-point" '  
+                                +'id="p'+i+'"'  
+                                +'title="'+i+'" '  
+                                +'style="' 
+                                    +'height:20px;'
+                                    +'width:20px;'
+                                    +'opacity:'+0.8 + ';' 
+                                    +'left:'+screenLocation.x+'px; '  
+                                    +'top:'+screenLocation.y+'px; '  
+                                    +'position:absolute; '  
+                                    +'cursor:pointer; '  
+                            +'">'  
+                                +'<img '  
+                                    +'src=' +  icon
+                                +'/>'  
+                            +'</div>');
+            } else {
+                opacity = opacity + 0.2;
+                $point =  $('<div '  
+                                +'class="map-point" '  
+                                +'id="p'+i+'"'  
+                                +'title="'+i+'" '  
+                                +'style="'  
+                                    +'opacity:'+opacity + ';' 
+                                    +'left:'+screenLocation.x+'px; '  
+                                    +'top:'+screenLocation.y+'px; '  
+                                    +'position:absolute; '  
+                                    +'cursor:pointer; '  
+                            +'">'  
+                                +'<img '  
+                                    +'src=' + color   
+                                +'/>'  
+                            +'</div>');
+            }
+        } else {
+            color = 'red.png';
+            opacity = 0.1;
+                $point =  $('<div '  
+                                +'class="map-point" '  
+                                +'id="p'+i+'"'  
+                                +'title="'+i+'" '  
+                                +'style="'  
+                                    +'opacity:'+opacity + ';' 
+                                    +'left:'+screenLocation.x+'px; '  
+                                    +'top:'+screenLocation.y+'px; '  
+                                    +'position:absolute; '  
+                                    +'cursor:pointer; '  
+                            +'">'  
+                                +'<img '  
+                                    +'src=' + color
+                                +'/>'  
+                            +'</div>');
+            
+        }
+        //console.log("color = " + color);
+        //console.log("index = " + i);
+
+
+        
+        
+
+        fragment.appendChild($point.get(0));  
+    }
+    this.markerLayer.append(fragment);
+
+}
+
+
+
+
+
+
+
+
+
+// for (var view in data){
+//      var color;
+//      var opacity;
+//      if (data[view].opacity > 0.05) {
+//          //color = '#359E11';
+//          color = 'red';
+//          opacity = data[view].opacity + 0.1;
+//      } else {
+//          color = 'orange';
+//          opacity = 0.2;
+//      }
+//      var circleOptions = {
+//          fillOpacity : opacity,
+//          fillColor: color,
+//          strokeColor: color,
+//          strokeOpacity: 0.0,
+//          map: map,
+//          center: data[view].centre,
+//          radius: 15
+//      };
+//     greenCircle = new google.maps.Circle(circleOptions);
+//     console.log("count = "+ view);
+// }
+// }
+
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+
+</script>
+</head>
+<div id="map" style="width:2000px; height:1500px;"></div>
+</body>
+</html>
