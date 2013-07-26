@@ -12,4 +12,7 @@ class HomeController < ApplicationController
 	def salem
 	end
 
+	def lines
+	end
+
 end

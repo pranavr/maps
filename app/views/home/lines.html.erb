@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />-->
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<!--<body onload="initialize()">-->
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBZnvqy9HEpG-LAQwm_AxDOegMciI9jgP4&libraries=geometry&sensor=false"></script>
+
+
+<script type="text/javascript">
+var map;
+var directionsService = new google.maps.DirectionsService();
+//var distanceMatService = new google.maps.DistanceMatrixService();
+var mapCenter; 
+
+var gridwidth;
+var cellwidth;
+var width;
+var height
+var NW;
+var NS;
+var SS;
+var modeA;
+var modeB;
+
+
+var values = {};
+var isRatio;
+
+var proceedsA;
+var proceedsB;
+var infowindow = new google.maps.InfoWindow();
+  var rectArr=[];
+  var cols=["gray"]
+
+  function initialize() {
+    
+    gridwidth = document.getElementById('gridWidth').value * 1000;
+  cellwidth = document.getElementById('cellWidth').value;
+
+  //= new google.maps.LatLng(42.362874,-71.090097);
+  var coords = document.getElementById('center').value;
+  var split_coords = coords.split(",");
+  var lat = parseFloat(split_coords[0]);
+  var lng = parseFloat(split_coords[1]);
+  //console.log("doc val="+document.getElementById('center').value);
+  mapCenter = new google.maps.LatLng(lat, lng);
+  //console.log("lat="+ lat);
+  //console.log("lng="+lng);
+  //console.log("mapCenter"+mapCenter);
+  width = Math.floor(gridwidth/cellwidth);
+  //alert("width=" + width);
+
+  values.centers= [];
+  values.cellColors = [];
+
+  //Batch A
+  values.durationsA = [];
+  values.distancesA = [];
+  
+  
+  values.stateA = [];
+  proceedsA =0;
+  //Batch B
+  values.durationsB = [];
+  values.distancesB = [];
+  
+  //values.cellColorsB = [];
+  values.stateB = [];
+  proceedsB =0;
+  //Store final values here
+  values.ratios= [];
+
+
+    //var kendall = new google.maps.LatLng(42.362874,-71.090097);
+    
+
+    var myOptions = {
+      zoom: 16,
+      //center: kendall,
+      center: mapCenter,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var styles = [
+  {
+    "stylers": [
+      { "visibility": "simplified" },
+      { "hue": "#00b2ff" },
+      { "weight": 0.5 },
+      { "saturation": -51 },
+      { "gamma": 1.26 },
+      { "lightness": 100 }
+    ]
+  }
+];
+
+    map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+    map.setOptions({styles: styles});
+    //map = new google.maps.StyledMapType(document.getElementById("map_canvas", styles,)
+    height = width;
+  var half_width = width/2;
+  var half_height = height/2;
+  var distFromCenter = Math.sqrt(Math.pow(half_width*cellwidth,2) + Math.pow(half_height*cellwidth, 2));
+  NW = google.maps.geometry.spherical.computeOffset(mapCenter, distFromCenter,315);
+  NS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,90)
+  SS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,180)
+  
+  modeA = document.getElementById("modeA").value;
+  //modeB = document.getElementById("modeB").value;
+
+  initGrid();
+  //isRatio = document.getElementById("ratio").checked;
+  if (modeA=="DISTANCE"){
+      findEuclideanDistA();
+  }
+  else{
+    console.log("calling selectModeA");
+    selectModeA();
+  }
+  // This parallel processes requests, but cannot use with current query limit.
+  // if (isRatio){
+  //  if (modeB=="DISTANCE"){
+  //    findEuclideanDistB();
+  //  }
+  //  else{
+  //    selectModeB();
+  //  }
+  // }
+    
+
+   
+  } 
+  
+  // //Helper method to find parameter values
+
+var initGrid = function(){
+  for(var i=0; i < width; i++){
+  
+    NE = google.maps.geometry.spherical.computeOffset(NS,i*cellwidth,180)
+    SW = google.maps.geometry.spherical.computeOffset(SS,i*cellwidth,180)
+
+    
+    for(var j=0; j < width; j++){
+      
+      var cellCenter = google.maps.geometry.spherical.computeOffset(NE,(Math.sqrt(2) *cellwidth)/2, 225);
+      
+      values.centers.push(cellCenter);
+      
+      var SW = google.maps.geometry.spherical.computeOffset(SW,cellwidth,90)
+      var NE = google.maps.geometry.spherical.computeOffset(NE,cellwidth,90)
+    }
+  }
+  console.log("len= " + values.centers.length);
+  console.log("done initGrid");
+}
+
+var batchSizeA =4;
+var numBatchesA  =0;
+var batchCounterA = 0;
+function selectModeA(){ 
+  console.log("In selectModeA" + "nmBatches=" + numBatchesA + "other = " + Math.floor(values.centers.length/batchSizeA));
+  if (numBatchesA <Math.floor(values.centers.length/batchSizeA)){
+    console.log("calling makeRequest");
+    setTimeout(makeRequestA,5000);
+
+  }
+  // else {
+  //  //console.log("when done proceedsA= " + proceedsA);
+  //    //console.log("done selectModeA");
+  //    if (isRatio){
+  //    if (modeB=="DISTANCE"){
+  //      findEuclideanDistB();
+  //    }
+  //    else{
+  //      selectModeB();
+  //      }
+  //      setTimeout(checkParallelCalls,1500);
+  //  }
+  //  else{
+  //    setTimeout(findCellColors,1500);
+  //  }
+
+  // }
+}
+
+function makeRequestA(){
+  //console.log("entering makeRequest"+ new Date().getTime());
+  //console.log("#batches = "+ numBatches);
+  var i = 0
+  for (var k=0; k < batchSizeA;k++){
+    
+    var request = {
+        origin: values.centers[numBatchesA*batchSizeA + k],
+        destination:mapCenter,
+        travelMode: google.maps.TravelMode[modeA]
+      };
+      var rendererOptions = {
+        preserveViewport: false,
+        suppressMarkers:true,
+        routeIndex: (numBatchesA*batchSizeA + k)
+      };
+
+      
+      
+      console.log("batch #= "+ numBatchesA + "index= "+ (numBatchesA*batchSizeA + k));
+    directionsService.route(request, function(response,status){
+        if (status == google.maps.DirectionsStatus.OK){
+          var polylineOptionsActual = new google.maps.Polyline({
+            strokeColor: 'red',
+            strokeOpacity: 0.02,
+            strokeWeight: 2
+          });
+          directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+          directionsDisplay.setMap(map);
+          directionsDisplay.setOptions({polylineOptions: polylineOptionsActual});
+          console.log("HERE Drawing directions");
+          directionsDisplay.setDirections(response);
+          values.durationsA.push(response.routes[0].legs[0].duration.value);
+          values.distancesA.push(response.routes[0].legs[0].distance.value);
+          values.stateA.push("Good");
+          
+          //alert("Alert 1: in for loop" + values.distances);
+          
+        }
+        else {
+          values.durationsA.push(NaN);
+          values.distancesA.push(NaN);
+          values.stateA.push(status);
+          console.log("STATUS=" + status);
+        }
+        proceedsA++;
+        //console.log("proceedsA= " + proceedsA);
+        
+    }); 
+  }
+  numBatchesA++;
+  //console.log("sending control back");
+  selectModeA();
+  
+}
+
+
+//Using linear interpolation
+function findCellColors () {
+  //alert("colors Dists=" + values.distances);
+  var metricA;
+  var metricB;
+  var metricRatio;
+  if (document.getElementById("metricA").value){
+    metricA = values.distancesA;
+  }
+  else{
+    metricA = values.durationsA;
+  }
+  
+  if (isRatio){
+    if (document.getElementById("metricA").value){
+      metricB = values.distancesB;
+    }
+    else{
+      metricB = values.durationsB;
+    }
+    for (var j=0; j<values.centers.length; j++){
+      //console.log("metricA=" + metricA[j]);
+      //console.log("metricB=" + metricB[j]);
+      if (metricB[j] != 0){
+        values.ratios[j] = (metricA[j]/metricB[j]) * 10;
+      }
+      else{
+        values.ratios[j] = NaN;
+      }
+      //console.log("values.ratios =" +values.ratios[j])
+    }
+  }
+  else{
+    values.ratios = metricA;
+  }
+  //alert("ratios=" + values.ratios);
+
+  var maxV = function (){
+    var max = 0;
+    for(var i=0; i<values.ratios.length;i++){
+      if (!isNaN(values.ratios[i])){
+        if (max < values.ratios[i]){
+          max = values.ratios[i];
+        }
+      }
+    }
+    return max;
+  }
+  var maxVal = maxV();
+  var minV = function (){
+    var min = Infinity;
+    for(var i=0; i<values.ratios.length;i++){
+      if (!isNaN(values.ratios[i])){
+        if (min > values.ratios[i]){
+          min = values.ratios[i];
+        }
+      }
+    }
+    return min;
+  }
+  var minVal = minV();
+  //var minVal = Math.max.apply(Math, [0, Math.min.apply(Math, metric)]);
+  //alert("minVal=" + minVal);
+  //var maxVal = Math.max.apply(Math, metric);
+  //alert("max="+ maxVal);
+
+  var gradient = (0.8)/(maxVal - minVal);
+  var c = -1.0 * gradient * minVal;
+  // y = (gradient ) val + c
+  for (var i=0; i<values.centers.length;i++){
+    values.cellColors[i] = gradient * values.ratios[i] + c;
+  }
+  //alert("cellColors=" + values.cellColors);
+  //console.log("done findCellColors");
+  drawRects();
+}
+
+
+
+
+function drawRects () {
+
+  //var height = width;
+  //var half_width = width/2;
+  //var half_height = height/2;
+   
+  //var distFromCenter = Math.sqrt(Math.pow(half_width*cellwidth,2) + Math.pow(half_height*cellwidth, 2));
+  //NW = google.maps.geometry.spherical.computeOffset(kendall, distFromCenter,315);
+  
+  //NS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,90)
+  //SS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,180)
+  
+  //alert("PLEASE WORK  1  !=" + values.distances); 
+  
+  for (var i = 0; i < height; i++) {
+  // //distances[i] = new Array(width);
+  NE = google.maps.geometry.spherical.computeOffset(NS,i*cellwidth,180)
+  SW = google.maps.geometry.spherical.computeOffset(SS,i*cellwidth,180)
+  
+  for (var j = 0; j < width; j++) {
+    //var cellCenter = google.maps.geometry.spherical.computeOffset(NE,cellwidth/2, 135);
+    //calcCellValue(kendall,cellCenter);
+    
+    //alert("Alert 3: PLEASE WORK  HERE!=" + values.distances[2]);
+    var cellOpacity;
+    var cellColor;
+    if (isNaN(values.cellColors[i*width + j])){
+      cellColor = "blue";
+      cellOpacity = 0.5;
+    }
+    else{
+      cellColor = "gray";
+      cellOpacity = values.cellColors[i*width + j];
+    }
+    //alert("Color=" + cellColor + "opa=" + cellOpacity);
+    var rectangle = new google.maps.Rectangle();
+    var rectOptions = {
+          strokeColor: "gray",
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          //fillColor: cols[Math.floor(Math.random()*cols.length)],
+          fillColor: cellColor,
+          //fillOpacity: 0.5,
+          fillOpacity: cellOpacity,
+          map: map,
+          bounds: new google.maps.LatLngBounds(SW,NE)
+          };
+          rectangle.setOptions(rectOptions);
+        rectArr.push(rectangle);
+
+
+        bindWindow(rectangle, i,j);
+    
+      var SW = google.maps.geometry.spherical.computeOffset(SW,cellwidth,90)
+      var NE = google.maps.geometry.spherical.computeOffset(NE,cellwidth,90)
+      }
+    }
+
+  }
+  
+    function bindWindow(rectangle,i,j){
+    google.maps.event.addListener(rectangle, 'click', function(event) {
+        if (isRatio){
+          infowindow.setContent("Cell Value = "+ values.ratios[i*width + j]/10+ "LatLng=" + values.centers[i*width + j])
+        }
+        else{
+          infowindow.setContent("Cell Value = "+ values.ratios[i*width + j]+ "LatLng=" + values.centers[i*width + j])
+        }
+          infowindow.setPosition(event.latLng)
+      infowindow.open(map);
+        });
+    }
+
+   
+
+    
+</script>
+</head>
+<body>
+<div style="height:20px">
+<label name="width">Grid size (km)</label><input name="width" id="gridWidth" type="text">
+<label name="cellwidth">Cell Width (meters)</label><input name="cellwidth" id="cellWidth" type="text">
+<p></p>
+<label name="place"> Select City/Place </label>
+<select id="center">
+  <option value=42.383865,-71.139656> Tobin School </option>
+  <option value=42.340997,-71.107495> Winsor School </option>
+  <option value=42.378091,-71.152246> Haggerty School </option>
+  <option value=42.392372,-71.128149> Peabody School </option>
+  <option value=42.383146,-71.124085> Graham & Parks School </option>
+  <option value=42.382318,-71.116655> Baldwin School </option>
+  <option value=42.374461,-71.111226> Cambridge Rindge and Latin </option>
+  <option value=42.369391,-71.097737> Cambridgeport School </option>
+  <option value=42.371997,-71.091628> King Open School </option>
+  <option value=42.369691,-71.086665> Kennedy/Longefellow School </option>
+  <option value=42.367051,-71.095541> Fletcher Maynard Academy </option>
+  <option value=42.355963,-71.112407> Morse School </option>
+  <option value=42.366916,-71.113518> Martin Luther King Jr. School </option>
+  <option value=42.365552,-71.104116> Central Square </option>
+  <option value=42.362874,-71.090097> Kendall Square </option>
+  <option value=42.373442,-71.11895> Harvard Square </option>
+  <option value=42.355468,-71.060042> Boston, MA (Downtown Crossing)</option>
+  <option value=40.742965,-73.986912> Manhattan, NYC </option>
+  <option value=37.77493,-122.419415> San Francisco, CA </option>
+  <option value=38.895112,-77.036366> Washington, DC </option>
+</select>
+<p></p>
+<label name="mode"> Choose mode (A)</label>
+<select id="modeA">
+  <option value="WALKING">Walking</option>
+  <option value="DRIVING">Driving</option>
+  <option value="BICYCLING">Bicycling</option>
+  <option value="TRANSIT">Transit</option>
+  <option value="DISTANCE"> Crow-Flies Distance</option>
+</select>
+<button type="button" onclick="initialize()"> Create Visualization </button>
+<p></p>
+</div>
+<div id="map_canvas" style="width:100%; height:2000px; topmargin:-20px;"></div>
+</body>
+</html>
