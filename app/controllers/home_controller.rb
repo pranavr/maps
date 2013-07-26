@@ -9,5 +9,7 @@ class HomeController < ApplicationController
 	end
 	
 
+	def salem
+	end
 
 end
