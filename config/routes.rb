@@ -5,6 +5,7 @@ VizmapsProj::Application.routes.draw do
   match '/boundary' => "home#boundary"
   root :to => "home#index"
   match '/salem' => "home#salem"
+  match '/lines' => "home#lines"
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
