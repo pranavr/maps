@@ -25,8 +25,8 @@ html, body, #map {
 }
 
 .stations circle {
-  fill: #74BA29;
-  stroke: #74BA29;
+  fill: #67A307;
+  stroke: #67A307;
 }
 
     </style>
@@ -38,7 +38,7 @@ html, body, #map {
 // Create the Google Map…
 var map = new google.maps.Map(d3.select("#map").node(), {
   zoom: 15,
-  center: new google.maps.LatLng(42.350296,-71.088274),
+  center: new google.maps.LatLng(42.513486,-70.904424),
   mapTypeId: google.maps.MapTypeId.ROAD
 });
 
@@ -51,13 +51,13 @@ var styles = [
       { "weight": 0.5 },
       { "saturation": -51 },
       { "gamma": 1.26 },
-      { "lightness": 100 }
+      { "lightness": 75 }
     ]
   }
 ]
 map.setOptions({styles: styles});
 
-d3.json("out_Boston1.json", function(data){
+d3.json("out_Salem1.json", function(data){
   //console.log(data);
   var overlay = new google.maps.OverlayView();
 
@@ -69,15 +69,9 @@ d3.json("out_Boston1.json", function(data){
     // Draw each marker as a separate SVG element.
     // We could use a single SVG, but what size would it have?
     overlay.draw = function() {
-
-      var arr = [0.1, 0.05, 0.05, 0.5];
-      var sizeArr = [2,4,6];
-      var values = d3.entries(data).values;
-      console.log(values);
       var projection = this.getProjection(),
           padding = 10;
-          opacity=0;
-          size = changeSize();
+          opacity = 1.0;
 
       var marker = layer.selectAll("svg")
           .data(d3.entries(data))
@@ -90,27 +84,18 @@ d3.json("out_Boston1.json", function(data){
 
       // Add a circle.
       marker.append("svg:circle")
-          .attr("r", function(d){
-            return d.value[3];
-          })
+          .attr("r", 2)
           .attr("cx", padding)
           .attr("cy", padding)
-          .style("fill-opacity", function(d){
-            //console.log("v = " + d.value[2]);
-            return d.value[2]})
-          .style("stroke-opacity", 0);
+          .style("fill-opacity",opacity)
+          .style("stroke-opacity", opacity);
 
       function changeOpacity(d){
         opacity = d.value[2];
-        //console.log(d.value[2]);
+        console.log(d.value[2]);
         return d.value[2];
       }
 
-      function changeSize(d){
-        var r = Math.floor(Math.random() * 2);
-        size = arr[r];
-        return size;
-      }
       
       function transform(d) {
         d = new google.maps.LatLng(d.value[0], d.value[1]);
