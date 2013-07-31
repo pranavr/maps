@@ -15,4 +15,13 @@ class HomeController < ApplicationController
 	def lines
 	end
 
+	def sf
+	end
+
+	def family_viz
+	end
+
+	def family_viz_random
+	end
+
 end

@@ -6,6 +6,9 @@ VizmapsProj::Application.routes.draw do
   root :to => "home#index"
   match '/salem' => "home#salem"
   match '/lines' => "home#lines"
+  match '/sf' => "home#sf"
+  match '/family_viz' => "home#family_viz"
+  match '/family_viz_random' => "home#family_viz_random"
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
