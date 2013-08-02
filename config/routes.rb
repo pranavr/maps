@@ -6,6 +6,7 @@ VizmapsProj::Application.routes.draw do
   root :to => "home#index"
   match '/salem' => "home#salem"
   match '/lines' => "home#lines"
+  match '/weightedRoutes' => "home#weightedRoutes"
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

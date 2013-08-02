@@ -16,4 +16,7 @@ class HomeController < ApplicationController
 	def lines
 	end
 
+	def weightedRoutes
+	end
+
 end
