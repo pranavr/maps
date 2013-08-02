@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8" type="text/javascript"></script>
+  <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.29.1"></script>
+  <script type="text/javascript">
+  console.log("HERE");
+
+  //var data = [4,8,20,15,23,42,9];
+
+  window.onload = function() {
+
+
+  d3.json("/family_data.json", function(data){
+
+      //console.log("entered d3");
+
+      var families = [50,250,450,650,850,1050,1250,1450,1650,1850];
+      var colors = ["#E0C21B", "#BFE01B", "#E0281B", "#1BE0AF", "#4A8A7A","#4A5B8A",
+          "#5F4A8A", "#7D4A8A", "#8A4A7D", "#DBB988"];
+
+        var canvas = d3.select("body").append("svg")
+          .attr("width", 2015)
+          .attr("height", 2100)
+
+        canvas.selectAll("svg")
+          .data(data)
+          .enter()
+            .append("rect")
+            .attr("width", 2)
+            .attr("height", function(d) {
+              console.log(d.birth, d.death, d.death-d.birth);
+              return (d.death - d.birth) * 5 ;})
+            .attr("y", function(d) { return (2000 - d.death) * 10 ;})
+            .attr("x", function (d, i) { return i* 5 + 60; })
+            .style("fill", function(d) { return colors[d.family];});
+
+        var y = d3.scale.linear()
+          .domain([1800, 2010])
+          //.range("0px", "420px")
+
+
+        var skip = 8;
+        canvas.selectAll("svg")
+          .data(y.ticks(skip))
+          .enter()
+            .append("line")
+            .attr("x1", 0)
+            .attr("x2", 2000)
+            .attr("y1", function(d) {
+                return (2010 - d)* 10;})
+            .attr("y2", function(d) {return (2010 - d)* 10;})
+            .style("stroke", "#ccc")
+            .style("opacity", 0.8);
+
+
+        canvas.selectAll(".rule")
+          .data(y.ticks(skip))
+          .enter().append("text")
+            .attr("class", "rule")
+            .attr("x", 0)
+            .attr("y", function(d) {return (2010- d) * 10;})
+            .attr("dx", 30)
+            .attr("text-anchor", "middle")
+            .text(String);
+      console.log(data);
+      
+      });
+
+  }
+  
+
+   </script>
+</head>
+
+<body>
+
+
+
+
+</body>
+</html>
