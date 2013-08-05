@@ -80,11 +80,12 @@ var directionsService = new google.maps.DirectionsService();
       }
 
       var selected = [];
-      for (var i = 0; i<filter.length -2; i = i+2){
+      for (var i = 0; i<filter.length -2; i++){
         var pointA = new google.maps.LatLng(filter[i].lat, filter[i].lng);
         var pointB = new google.maps.LatLng(filter[i+1].lat, filter[i+1].lng);
         if (google.maps.geometry.spherical.computeDistanceBetween(pointA, pointB)>= 500){
           selected.push(filter[i]);
+          selected.push(filter[i+1]);
         }
       }
 

@@ -11,6 +11,7 @@ VizmapsProj::Application.routes.draw do
   match '/sf' => "home#sf"
   match '/family_viz' => "home#family_viz"
   match '/family_viz_random' => "home#family_viz_random"
+  match '/awake' => "home#awake"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

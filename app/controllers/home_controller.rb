@@ -30,4 +30,7 @@ class HomeController < ApplicationController
 
 	end
 
+	def awake
+	end
+
 end
