@@ -87,16 +87,16 @@ var centers = {
           ]
         }
       ]
-      //map.setOptions({styles: styles});
+      map.setOptions({styles: styles});
 
       //console.log("data length = "+ CDataPop.length);
 
      var circle = new google.maps.Circle({
             strokeColor: '#FF0000',
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
+            strokeOpacity: 0,
+            strokeWeight: 0,
             fillColor: '#FFFFFF',
-            fillOpacity: 0.35,
+            fillOpacity: 0,
             map: map,
             center: new google.maps.LatLng(42.365551,-71.103911),
             radius: 2000
@@ -169,10 +169,10 @@ var centers = {
       for (var j = 0; j< selected.length; j++){
         var circle2Options = {
               strokeColor: 'blue',
-              strokeOpacity: 0.35,
-              strokeWeight: 2,
+              strokeOpacity: 0,
+              strokeWeight: 0,
               fillColor: 'blue',
-              fillOpacity: 0.35,
+              fillOpacity: 0,
               map: map,
               center: new google.maps.LatLng(selected[j].lat, selected[j].lng),
               radius: Math.round(Math.sqrt(selected[j].count))
@@ -246,7 +246,7 @@ var centers = {
                           var ptLtLg = new google.maps.LatLng(sectorPoints[station][pt].lat, sectorPoints[station][pt].lng);
                           //console.log("pt = " + sectorPoints[station][pt].lat);
                           if (gridCircles.getBounds().contains(ptLtLg)){
-                            console.log("inside Circle");
+                            //console.log("inside Circle");
                             sum+= sectorPoints[station][pt].count;
                             count++;
                           }
@@ -264,15 +264,15 @@ var centers = {
                         
                         var info = [cellCenter, avg];
 
-                        console.log("sum " + sum + " count = " + count + " avg  =" + avg);
+                        //console.log("sum " + sum + " count = " + count + " avg  =" + avg);
                         cellInfo[station].push(info);
 
                         var gridCircles2  =  new google.maps.Circle({
                                 strokeColor: color,
-                                strokeOpacity: 0.8,
-                                strokeWeight: 2,
+                                strokeOpacity: 0,
+                                strokeWeight: 0,
                                 fillColor: color,
-                                fillOpacity: 1.0,
+                                fillOpacity: 0,
                                 map: map,
                                 center: cellCenter,
                                 radius: 10
@@ -293,23 +293,39 @@ var centers = {
       }
 
 
-      console.log(cellInfo);
+      //console.log(cellInfo);
 
       //console.log('r = '  + radii);
       //var p=0;
-      //caller();
 
 
-/*
+      var allStations = ['kendall','harvard', 'central', 'porter'];
+      var currentStation; var sIndex= 0;
+      var currentIndex = 0;
+      caller();
+
+
+
       function caller(){
-        if (p < selected.length){
-          setTimeout(drawRoute,5000);
-          console.log("p " + p);
-        } else {
-          console.log("Out of P!");
+        if (sIndex <= 3) {
+          currentStation = allStations[sIndex];
+          //console.log("here " + currentStation);
+          if ( currentIndex <= cellInfo[currentStation].length){
+            
+
+            console.log("current Station = " + currentStation + " current Index = " + currentIndex);
+
+            setTimeout(drawRoute,5000);
+          } else {
+            sIndex++;
+            currentIndex = 0;
+          }
         }
+          
+        }
+        
       }
-*/
+
       
             
       
@@ -318,7 +334,7 @@ var centers = {
       function drawRoute(){
 
         var request = {
-                origin: new google.maps.LatLng(selected[p].lat, selected[p].lng),
+                origin: cellInfo[currentStation][currentIndex][0],
                 destination:mapCenter,
                 travelMode: google.maps.DirectionsTravelMode.WALKING
             };
@@ -326,7 +342,7 @@ var centers = {
             var rendererOptions = {
                 preserveViewport: true,
                 suppressMarkers:true,
-                routeIndex:p
+                routeIndex: currentIndex
             };
 
 
@@ -335,23 +351,23 @@ var centers = {
                 var polylineOptionsActual = new google.maps.Polyline({
                   strokeColor: 'blue',
                   strokeOpacity: 0.05,
-                  strokeWeight: radii[p]
+                  strokeWeight: cellInfo[currentStation][currentIndex][1]
                 });
 
-                console.log( p + "   " + radii[p]+ "   " +  radii[p]);
+                
                 directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
                 directionsDisplay.setMap(map);
                 directionsDisplay.setOptions({polylineOptions: polylineOptionsActual});
                 directionsDisplay.setDirections(response);
 
-                p++;
+                currentIndex++;
               } else {
 
                 console.log("STATUS=" + status);
               }
             });
             
-            if (p == selected.length){
+            if (currentIndex == cellInfo[currentStation].length && sIndex ==3){
               console.log("done!");
             } else {
               
@@ -417,7 +433,7 @@ var centers = {
 
       // }
 
-}
+
 
 google.maps.event.addDomListener(window, 'load', initialize);
 
