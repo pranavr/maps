@@ -7,13 +7,66 @@
 
 
 
-var map;
-var directionsService = new google.maps.DirectionsService();
+//var map;
+//var directionsService = new google.maps.DirectionsService();
 function initialize() {
       
 var map;
 var mapCenter = new google.maps.LatLng(42.365551,-71.103911);
 var directionsService = new google.maps.DirectionsService();
+
+
+var stations = {
+  'central' : new google.maps.LatLng(42.365551,-71.103911),
+  'kendall' : new google.maps.LatLng(42.365899,-71.090505),
+  'harvard' : new google.maps.LatLng(42.374776,-71.118314),
+  'porter' : new google.maps.LatLng(42.391387,-71.132047)
+}
+
+
+ var sectorCircles;
+
+      var sectors = {
+        'harvard': null,
+        'central': null,
+        'kendall' : null,
+        'porter' : null
+      };
+
+      for (var station in stations){
+        var color;
+        if (station == 'kendall'){
+          color = 'grey';
+        } else if (station == 'central'){
+          color = 'black';
+        } else if (station =='harvard'){
+          color = 'red';
+        } else {
+          color = 'green';
+        }
+
+        sectorCircles = new google.maps.Circle({
+          strokeColor: color,
+          strokeOpacity: 0.8,
+          strokeWeight: 10,
+          fillColor: color,
+          fillOpacity: 0.0,
+          map: map,
+          center: stations[station],
+          radius: 1000
+        });
+
+        sectors[station] = sectorCircles;
+      }
+
+
+
+var centers = {
+  'central' : new google.maps.LatLng(42.365551,-71.103911),
+  'kendall' : new google.maps.LatLng(42.362817,-71.090225),
+  'harvard' : new google.maps.LatLng(42.373447,-71.118991),
+  'porter' : new google.maps.LatLng(42.38879,-71.119257)
+}
 
       var map = new google.maps.Map(document.getElementById("map_canvas"), {
         zoom: 15,
@@ -34,7 +87,7 @@ var directionsService = new google.maps.DirectionsService();
           ]
         }
       ]
-      map.setOptions({styles: styles});
+      //map.setOptions({styles: styles});
 
       //console.log("data length = "+ CDataPop.length);
 
@@ -53,15 +106,36 @@ var directionsService = new google.maps.DirectionsService();
 
       var points  = [];
 
+      var sectorPoints = {
+        'kendall' : [],
+        'central' : [],
+        'porter' : [],
+        'harvard' : []
+      };
+
+
+      var max = 0;
+
       for (var i = 0; i < CDataPop.length; i++){
 
         var point = new google.maps.LatLng(CDataPop[i].lat, CDataPop[i].lng);
-        
 
-        if (circle.getBounds().contains(point)){
+        for (var station in sectors){
+          if (sectors[station].getBounds().contains(point)){
+            sectorPoints[station].push(CDataPop[i]);
+          }
+        } 
 
-          points.push(CDataPop[i]);
+        if (CDataPop[i].count >= max){
+          max = CDataPop[i].count;
         }
+        
+        points.push(CDataPop[i]);
+
+        // if (circle.getBounds().contains(point)){
+
+        //   points.push(CDataPop[i]);
+        // }
       }                                                                                                         
      // console.log("in sector = " + points.length);
 
@@ -69,7 +143,7 @@ var directionsService = new google.maps.DirectionsService();
       var circles2;
 
       var filter = [];
-      for (var j =0; j<points.length; j = j + 5){
+      for (var j =0; j<points.length; j++){
         //console.log("val = " + points[j].count);
 
         if (j < points.length){
@@ -80,13 +154,14 @@ var directionsService = new google.maps.DirectionsService();
       }
 
       var selected = [];
-      for (var i = 0; i<filter.length -2; i++){
-        var pointA = new google.maps.LatLng(filter[i].lat, filter[i].lng);
-        var pointB = new google.maps.LatLng(filter[i+1].lat, filter[i+1].lng);
-        if (google.maps.geometry.spherical.computeDistanceBetween(pointA, pointB)>= 500){
-          selected.push(filter[i]);
-          selected.push(filter[i+1]);
-        }
+      for (var i = 0; i<filter.length; i++){
+        //var pointA = new google.maps.LatLng(filter[i].lat, filter[i].lng);
+        //var pointB = new google.maps.LatLng(filter[i+1].lat, filter[i+1].lng);
+        // if (google.maps.geometry.spherical.computeDistanceBetween(pointA, pointB)>= 500){
+        //   selected.push(filter[i]);
+        //   selected.push(filter[i+1]);
+        // }
+        selected.push(filter[i]);
       }
 
       var radii = [];
@@ -104,17 +179,128 @@ var directionsService = new google.maps.DirectionsService();
             }
             circles2 = new google.maps.Circle(circle2Options);
         radii.push(Math.round(Math.sqrt(selected[j].count)));
-        console.log("rad =  " + Math.round(Math.sqrt(selected[j].count)));
+        //console.log("rad =  " + Math.round(Math.sqrt(selected[j].count)));
       }
       
-
-
-      console.log('r = '  + radii);
-      var p=0;
-      caller();
+     
 
 
 
+
+
+      //var circle3Options;
+      var gridCircles;
+      var gridCircles2;
+
+      var cellInfo = {
+        'kendall' : [],
+        'central' : [],
+        'porter' : [],
+        'harvard' : []
+      }
+      
+      for (var station in stations){
+        //console.log(stations[station]);
+        
+
+        
+            var pointCenter = stations[station];
+            var dim = 2000;
+            var half_width = dim/2;
+            var half_height = dim/2;
+            var cellwidth = 100;
+            var distFromCenter = Math.sqrt(Math.pow(half_width,2) + Math.pow(half_height, 2));
+            NW = google.maps.geometry.spherical.computeOffset(pointCenter, distFromCenter,315);
+            NS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,90);
+            SS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,180);
+
+            var numCells = Math.round(dim/cellwidth);
+
+            for(var i=0; i < numCells; i++){
+              
+                NE = google.maps.geometry.spherical.computeOffset(NS,i*cellwidth,180)
+                SW = google.maps.geometry.spherical.computeOffset(SS,i*cellwidth,180)
+
+                      for(var j=0; j < numCells ; j++){
+                        
+                        var cellCenter = google.maps.geometry.spherical.computeOffset(NE,(Math.sqrt(2) *cellwidth)/2, 225);
+
+                        
+                        //console.log(cellCenter);
+
+                  
+                        gridCircles  =  new google.maps.Circle({
+                                strokeColor: color,
+                                strokeOpacity: 0,
+                                strokeWeight: 0,
+                                fillColor: color,
+                                fillOpacity: 0,
+                                map: map,
+                                center: cellCenter,
+                                radius: 100
+                          });
+
+                        var sum = 0;
+                        var count = 0;
+                        for (pt in sectorPoints[station]){
+                          var ptLtLg = new google.maps.LatLng(sectorPoints[station][pt].lat, sectorPoints[station][pt].lng);
+                          //console.log("pt = " + sectorPoints[station][pt].lat);
+                          if (gridCircles.getBounds().contains(ptLtLg)){
+                            console.log("inside Circle");
+                            sum+= sectorPoints[station][pt].count;
+                            count++;
+                          }
+                        }
+
+                        
+
+                        var avg 
+                        if (count != 0){
+                          avg = sum/count;
+                          avg = avg/max;
+                        } else {
+                          avg = 0;
+                        }
+                        
+                        var info = [cellCenter, avg];
+
+                        console.log("sum " + sum + " count = " + count + " avg  =" + avg);
+                        cellInfo[station].push(info);
+
+                        var gridCircles2  =  new google.maps.Circle({
+                                strokeColor: color,
+                                strokeOpacity: 0.8,
+                                strokeWeight: 2,
+                                fillColor: color,
+                                fillOpacity: 1.0,
+                                map: map,
+                                center: cellCenter,
+                                radius: 10
+                          });
+                              
+                        //gridCircles= new google.maps.Circle(circle3Options);
+
+                        
+                        //console.log(gridCircles);
+                        
+
+                        var SW = google.maps.geometry.spherical.computeOffset(SW,cellwidth,90)
+                        var NE = google.maps.geometry.spherical.computeOffset(NE,cellwidth,90)
+                      }
+              }
+
+
+      }
+
+
+      console.log(cellInfo);
+
+      //console.log('r = '  + radii);
+      //var p=0;
+      //caller();
+
+
+/*
       function caller(){
         if (p < selected.length){
           setTimeout(drawRoute,5000);
@@ -123,7 +309,7 @@ var directionsService = new google.maps.DirectionsService();
           console.log("Out of P!");
         }
       }
-
+*/
       
             
       
@@ -173,6 +359,63 @@ var directionsService = new google.maps.DirectionsService();
             }
       }
 
+
+
+
+      // var cellCenter;
+
+      // //console.log("s size"  + selected[3].lat);
+
+      // for (var p =0; p < selected.length ; p++){
+
+      //       var point = selected[p];
+      //       var pointCenter = new google.maps.LatLng(point.lat, point.lng);
+      //       var dim = Math.round(point.count);
+      //       var half_width = dim/2;
+      //       var half_height = dim/2;
+      //       var cellwidth = point.count/4;
+      //       var distFromCenter = Math.sqrt(Math.pow(half_width*cellwidth,2) + Math.pow(half_height*cellwidth, 2));
+      //       NW = google.maps.geometry.spherical.computeOffset(pointCenter, distFromCenter,315);
+      //       NS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,90);
+      //       SS = google.maps.geometry.spherical.computeOffset(NW,cellwidth,180);
+      //       console.log("point  = " + p);
+      //       console.log("dim = " + Math.round(point.count/10));
+
+      //           for(var i=0; i < Math.round(point.count/10); i++){
+              
+      //           NE = google.maps.geometry.spherical.computeOffset(NS,i*cellwidth,180)
+      //           SW = google.maps.geometry.spherical.computeOffset(SS,i*cellwidth,180)
+
+      //                 for(var j=0; j < Math.round(point.count/10) ; j++){
+                        
+      //                   cellCenter = google.maps.geometry.spherical.computeOffset(NE,(Math.sqrt(2) *cellwidth)/2, 225);
+                        
+      //                   drawCircle(cellCenter);
+      //                   //console.log("call to draw " +  i + " " + j);
+
+      //                   var SW = google.maps.geometry.spherical.computeOffset(SW,cellwidth,90)
+      //                   var NE = google.maps.geometry.spherical.computeOffset(NE,cellwidth,90)
+      //                 }
+      //         }
+        
+      // }
+
+      // var circle3Options;
+      // var gridCircles;
+      // function drawCircle(){
+      //   var circle3Options = {
+      //         strokeColor: 'black',
+      //         strokeOpacity: 0.8,
+      //         strokeWeight: 2,
+      //         fillColor: 'black',
+      //         fillOpacity: 0.35,
+      //         map: map,
+      //         center: cellCenter,
+      //         radius: 5
+      //       }
+      //       gridCircles= new google.maps.Circle(circle3Options);
+
+      // }
 
 }
 
