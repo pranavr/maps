@@ -177,17 +177,17 @@ var stations = {
       var radii = [];
 
       for (var j = 0; j< selected.length; j++){
-        var circle2Options = {
-              strokeColor: 'blue',
-              strokeOpacity: 0,
-              strokeWeight: 0,
-              fillColor: 'blue',
-              fillOpacity: 0,
-              map: map,
-              center: new google.maps.LatLng(selected[j].lat, selected[j].lng),
-              radius: Math.round(Math.sqrt(selected[j].count))
-            }
-            circles2 = new google.maps.Circle(circle2Options);
+        // var circle2Options = {
+        //       strokeColor: 'blue',
+        //       strokeOpacity: 0,
+        //       strokeWeight: 0,
+        //       fillColor: 'blue',
+        //       fillOpacity: 0,
+        //       map: map,
+        //       center: new google.maps.LatLng(selected[j].lat, selected[j].lng),
+        //       radius: Math.round(Math.sqrt(selected[j].count))
+        //     }
+        //     circles2 = new google.maps.Circle(circle2Options);
         radii.push(Math.round(Math.sqrt(selected[j].count)));
         //console.log("rad =  " + Math.round(Math.sqrt(selected[j].count)));
       }
@@ -239,16 +239,16 @@ var stations = {
                         //console.log(cellCenter);
 
                   
-                        gridCircles  =  new google.maps.Circle({
-                                strokeColor: color,
-                                strokeOpacity: 0,
-                                strokeWeight: 0,
-                                fillColor: color,
-                                fillOpacity: 0,
-                                map: map,
-                                center: cellCenter,
-                                radius: 10
-                          });
+                        // gridCircles  =  new google.maps.Circle({
+                        //         strokeColor: color,
+                        //         strokeOpacity: 0,
+                        //         strokeWeight: 0,
+                        //         fillColor: color,
+                        //         fillOpacity: 0,
+                        //         map: map,
+                        //         center: cellCenter,
+                        //         radius: 10
+                        //   });
 
                         var sum = 0;
                         var count = 0;
@@ -277,16 +277,16 @@ var stations = {
                         //console.log("sum " + sum + " count = " + count + " avg  =" + avg);
                         cellInfo[station].push(info);
 
-                        var gridCircles2  =  new google.maps.Circle({
-                                strokeColor: color,
-                                strokeOpacity: 0,
-                                strokeWeight: 0,
-                                fillColor: color,
-                                fillOpacity: 0,
-                                map: map,
-                                center: cellCenter,
-                                radius: 10
-                          });
+                        // var gridCircles2  =  new google.maps.Circle({
+                        //         strokeColor: color,
+                        //         strokeOpacity: 0,
+                        //         strokeWeight: 0,
+                        //         fillColor: color,
+                        //         fillOpacity: 0,
+                        //         map: map,
+                        //         center: cellCenter,
+                        //         radius: 10
+                        //   });
                               
                         //gridCircles= new google.maps.Circle(circle3Options);
 
@@ -460,4 +460,4 @@ google.maps.event.addDomListener(window, 'load', initialize);
 
 <body>
   <h1 align="center"> Population Weighted Routes </h1>
-  <div id="map_canvas" style="width:100%; height:1000px;"></div>
+  <div id="map_canvas" style="width:100%; height:2000px;"></div>
