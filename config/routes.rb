@@ -13,6 +13,7 @@ VizmapsProj::Application.routes.draw do
   match '/family_viz_random' => "home#family_viz_random"
   match '/awake' => "home#awake"
   match '/touchLines' => "home#touchLines"
+  match '/connected' => "home#connected"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

@@ -36,4 +36,7 @@ class HomeController < ApplicationController
 	def touchLines
 	end
 
+	def connected
+	end
+
 end
