@@ -33,4 +33,7 @@ class HomeController < ApplicationController
 	def awake
 	end
 
+	def touchLines
+	end
+
 end
