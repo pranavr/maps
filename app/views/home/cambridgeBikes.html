@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBZnvqy9HEpG-LAQwm_AxDOegMciI9jgP4&libraries=geometry&sensor=false"></script>
+    <script src="/chart.js"></script>
+    <style type="text/css">
+
+    html, body{
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+        width: 70%;
+        height: 100%;
+        float:left;
+        border-left: 5px;
+    }
+    
+    #infoGraphic{
+      position: absolute;
+      height: 100%;
+      width: 29%;
+      left: 71%;
+      margin-right: 2%;
+      float:right;
+    }
+    #street-view, #canvas-container {
+      width:95%;
+      height:40%;
+
+    }
+    
+    
+
+
+
+   </style>
+   <script type="text/javascript">
+   var map;
+   var canvasLayer;
+   var context;
+   var accidentData;
+   var circles = [];
+   var monthlyData;
+   var monthValues;
+   var  graphColor = ['rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)'];
+
+   var bikeFlag = false;
+   var bikeLayer;
+
+   function init(){
+    map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 14,
+        center: new google.maps.LatLng(42.373242,-71.114074),
+        mapTypeId: google.maps.MapTypeId.ROAD,
+        streetViewControl: false,
+        zoomControl: false,
+        panControl:false
+      });
+
+    var styles = [
+    {
+        "featureType": "landscape",
+        "stylers": [
+          { "visibility": "simplified" },
+          { "color": "#000000" }
+        ]
+      },{
+        "featureType": "poi",
+        "stylers": [
+          { "visibility": "simplified" },
+          { "color": "#000000" }
+        ]
+      },{
+        "featureType": "road",
+        "stylers": [
+          { "visibility": "simplified" },
+          { "color": "#000000" },
+          { "lightness": 6 }
+        ]
+      },{
+        "featureType": "transit",
+        "stylers": [
+          { "visibility": "simplified" },
+          { "color": "#000000" },
+          { "lightness": 6 }
+        ]
+      },{
+        "elementType": "labels",
+        "stylers": [
+          { "visibility": "off" }
+        ]
+      },{
+        "featureType": "water",
+        "stylers": [
+          { "hue": "#1100ff" },
+          { "color": "#96aac8" }
+        ]
+      }
+    ]
+
+    var styles2 = [
+        {
+          "stylers": [
+            { "visibility": "simplified" },
+            { "hue": "#00b2ff" },
+            { "weight": 0.5 },
+            { "saturation": -51 },
+            { "gamma": 1.26 },
+            { "lightness": 100 }
+          ]
+        },
+        { "featureType": "poi",
+          "stylers": [
+          {"visibility": "off"}
+          ]
+        }
+      ]
+    map.setOptions({styles: styles});
+  
+
+    jQuery.getJSON('/cambridge-bike-data.json', function(data){
+        accidentData = data;
+        monthValues = [0,0,0,0,0,0,0,0,0,0,0,0];
+        for (var i in accidentData.data){
+          var month = parseInt(accidentData.data[i].date.split('/')[0]);
+          monthValues[month-1]++;
+        }
+        console.log(monthValues);
+        monthlyData = {
+            labels : ["January","February","March","April","May","June","July", "August", "September", "October", "November", "December"],
+
+            datasets : [
+                    {
+                      fillColor : graphColor,
+                      strokeColor : graphColor,
+                      colors: graphColor,
+                      data : monthValues
+                    },
+                    
+                  ]
+        };
+        setCanvas();
+        drawGraph(monthlyData, false);
+        drawCircles();
+
+    });
+
+    $("#bicyclingLayer").click(function(){
+    if (!bikeFlag){
+      bikeLayer = new google.maps.BicyclingLayer();
+      bikeLayer.setMap(map);
+      $("#bicyclingLayer").html("Disable Bicycling Layer");
+      bikeFlag= true;
+    } else {
+      bikeLayer.setMap(null);
+      bikeFlag = !bikeFlag;
+      $("#bicyclingLayer").html("Enable Bicycling Layer");
+    }
+   });
+  }
+
+
+
+  function setCanvas(){
+
+   var canvasNode = document.getElementById('myChart');
+
+   var pw = canvasNode.parentNode.clientWidth;
+   var ph = canvasNode.parentNode.clientHeight;
+
+   canvasNode.width = pw * 0.99;  
+   canvasNode.height = ph * 0.99;
+   canvasNode.style.top = (ph-canvasNode.height)/2 + "px";
+   canvasNode.style.left = (pw-canvasNode.width)/2 + "px";
+
+
+}
+    
+
+  function drawGraph(monthlyData, reset){
+
+    var chartOptions = {
+        
+          //Boolean - If we show the scale above the chart data     
+          scaleOverlay : false,
+          
+          //Boolean - If we want to override with a hard coded scale
+          scaleOverride : true,
+          
+          //** Required if scaleOverride is true **
+          //Number - The number of steps in a hard coded scale
+          scaleSteps : 5,
+          //Number - The value jump in the hard coded scale
+          scaleStepWidth : 6,
+          //Number - The scale starting value
+          scaleStartValue : 0,
+
+          //String - Colour of the scale line 
+          scaleLineColor : "rgba(0,0,0,.2)",
+          
+          //Number - Pixel width of the scale line  
+          scaleLineWidth : 1,
+
+          //Boolean - Whether to show labels on the scale 
+          scaleShowLabels : true,
+          
+
+          //String - Scale label font declaration for the scale label
+          scaleFontFamily : "'Arial'",
+          
+          //Number - Scale label font size in pixels  
+          scaleFontSize : 12,
+          
+          //String - Scale label font weight style  
+          scaleFontStyle : "normal",
+          
+          //String - Scale label font colour  
+          scaleFontColor : "#666",  
+          
+          ///Boolean - Whether grid lines are shown across the chart
+          scaleShowGridLines : true,
+          
+          //String - Colour of the grid lines
+          scaleGridLineColor : "rgba(0,0,0,.1)",
+          
+          //Number - Width of the grid lines
+          scaleGridLineWidth : 1, 
+
+          //Boolean - If there is a stroke on each bar  
+          barShowStroke : true,
+          
+          //Number - Pixel width of the bar stroke  
+          barStrokeWidth : 2,
+          
+          //Number - Spacing between each of the X value sets
+          barValueSpacing : 5,
+          
+          //Number - Spacing between data sets within X values
+          barDatasetSpacing : 1,
+          
+          //Boolean - Whether to animate the chart
+          animation : true,
+
+          //Number - Number of animation steps
+          animationSteps : 30,
+          
+          //String - Animation easing effect
+          animationEasing : "easeOutQuart",
+
+          //Function - Fires when the animation is complete
+          onAnimationComplete : null
+          
+          };
+
+    var ctx = $("#myChart").get(0).getContext("2d");
+    //This will get the first returned node in the jQuery collection.
+    if (reset){
+          chartOptions.animation = false;
+          console.log(reset);
+      var barChart = new Chart(ctx).Bar(monthlyData, chartOptions);
+    } else{
+      var barChart = new Chart(ctx).Bar(monthlyData, chartOptions);
+    }
+  }
+
+
+  
+
+    function drawCircles(){
+      var infoWindow = new google.maps.InfoWindow;
+      for (var i in accidentData.data){
+        var accident = accidentData.data[i];
+        var circleOptions = {
+          strokeColor: '#FA8602',
+          strokeOpacity:0.0,
+          fillColor: '#FA8602',
+          fillOpacity: 0.3,
+          map:map,
+          center: new google.maps.LatLng(accident.lat, accident.lng),
+          radius:50,
+          id: i
+        }
+        accidentCircle = new google.maps.Circle(circleOptions);
+        circles.push(accidentCircle);
+        
+        bindCircleDisplay(accidentCircle, infoWindow, accident);
+      }
+      
+    }
+
+    function bindCircleDisplay(circle, infoWindow, accident){
+
+      google.maps.event.addListener(circle,'mouseover', function(event){
+
+
+        circle.setRadius(200);
+
+        $("#address").html(accident.address.split(',')[0]);
+        var monthIndex = parseInt(accident.date.split('/')[0]);
+        var newgraphColor = graphColor;
+        newgraphColor[monthIndex-1] = 'rgba(250,134,2,1.0)';
+        monthlyData = {
+            labels : ["January","February","March","April","May","June","July", "August", "September", "October", "November", "December"],
+
+            datasets : [
+                    {
+                      fillColor : graphColor,
+                      strokeColor : graphColor,
+                      colors: newgraphColor,
+                      data : monthValues
+                    },
+                    
+                  ]
+        };
+        drawGraph(monthlyData, false);
+                
+        // if (infoWindow){
+        //   infoWindow.close();
+        // }
+
+        // infoWindow.setPosition(circle.getCenter());
+        // infoWindow.open(map);
+
+        // var contentString = '<div style="width:525px;height:300px;"><b><font size="4">'+ accident.address 
+        // + '</font></b>' 
+        // + '<br><b><font size = "4">'
+        // + accident.date 
+        // + '</b>'
+        // + '<br><i> No. accidents at this spot in 2012 = ' + accident.noAccidents
+        // + '</i></br></font><div id="content" style="width:500px;height:250px;"></div></div>';
+        var pano = null;
+        var panoramaOptions = {
+            position: new google.maps.LatLng(accident.lat, accident.lng),
+            pov: {
+              heading: 0,
+              pitch: -10,
+              zoom: 1
+            },
+            map: map,
+            navigationControl: false,
+            enableCloseButton: false,
+            addressControl: false,
+            linksControl: false,
+            panControl:false,
+            zoomControl:false
+        };
+        // google.maps.event.addListener(infoWindow, 'domready', function(){
+        //   if (pano != null){
+        //     pano.unbind("position");
+        //     pano.setVisible(false);
+        //   }
+        pano = new google.maps.StreetViewPanorama(document.getElementById("street-view"), panoramaOptions);
+        //pano.bindTo("position", circle);
+        pano.setVisible(true);
+        //});
+          
+          google.maps.event.addListener(circle, 'mouseout', function () {
+            var  orggraphColor = ['rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)','rgba(250,134,2,0.3)'];
+            monthlyData = {
+            labels : ["January","February","March","April","May","June","July", "August", "September", "October", "November", "December"],
+
+            datasets : [
+                    {
+                      fillColor : graphColor,
+                      strokeColor : graphColor,
+                      colors: orggraphColor,
+                      data : monthValues
+                    },
+                    
+                  ]
+        };
+
+        graphColor = orggraphColor;
+        drawGraph(monthlyData, true);
+        circle.setRadius(50);
+        $("#street-view").html("");
+        $("#address").html("");
+          });
+          
+        //   infoWindow.setContent(contentString);
+          
+      });
+
+    }
+
+
+   //  var canvasLayerOptions = {
+   //        map: map,
+   //        resizeHandler: resize,
+   //        animate: false,
+   //        updateHandler: update
+   //      };
+   //      canvasLayer = new CanvasLayer(canvasLayerOptions);
+   //      context = canvasLayer.canvas.getContext('2d');
+        
+
+        
+   // }
+
+   // function resize() {
+   //      // nothing to do here
+   // }
+
+   // // function changeColor(color){
+   // //  colorMap = {};
+   // //  colorMap['#FCB205'] = '#990033'; //driving
+   // //  colorMap['#F55714'] = '#FEBF10'; //transit
+   // //  colorMap['#FCE005'] = '#336699'; //biking
+   // //  colorMap[' #21FC05'] = '#669966'; //walking
+   // //  return colorMap[color];
+   // // }
+
+   // function update(){
+   //  console.log("called update");
+   //  if (accidentData != undefined){
+   //  var canvasWidth = canvasLayer.canvas.width;
+   //  var canvasHeight = canvasLayer.canvas.height;
+   //  context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+   //  var mapProjection = map.getProjection();
+   //  context.setTransform(1, 0, 0, 1, 0, 0);
+        
+   //  var scale = Math.pow(2, map.zoom);
+   //  context.scale(scale, scale);
+
+   //   google.maps.event.addListener(map, 'click', function(ev){
+   //    pt = mapProjection.fromLatLngToPoint(ev.latLng);
+   //    console.log("pt = " + pt);
+   //  })
+
+   //   //var accident = accidentData.data[10];
+   //    // context.fillStyle = 'rgba(97,248,210,57,0.5)';
+   //    // center = new google.maps.LatLng(accident.lat, accident.lng);
+   //    // screenCenter = mapProjection.fromLatLngToPoint(center);
+   //    // console.log(screenCenter);
+   //    // context.beginPath();
+   //    // context.arc(screenCenter.x, screenCenter.y, 300, 0, 2*Math.PI);
+   //    // context.strokeStyle = 'rgba(97,248,210,57,1.0)';
+   //    // context.fill();
+   //    // context.stroke();
+
+   //  for (var i in accidentData.data){
+   //    var accident = accidentData.data[i];
+   //    context.fillStyle = 'rgba(248,210,57,0.5)';
+   //    center = new google.maps.LatLng(accident.lat, accident.lng);
+   //    screenCenter = mapProjection.fromLatLngToPoint(center);
+   //    console.log(screenCenter);
+   //    context.beginPath();
+   //    context.arc(screenCenter.x, screenCenter.y, 300, 0, 2*Math.PI);
+   //    context.strokeStyle = 'rgba(248,210,57,1.0)';
+   //    context.fill();
+   //    context.stroke();
+
+   //  }
+
+   //  }
+   // }
+
+   
+
+   
+    google.maps.event.addDomListener(window, 'load', init);
+   </script>
+  </head>
+  <body>
+      <div id="infoGraphic">
+        <p align="center" style="font-size:12pt;font-family:Arial;font-weight:bold; color:#FA8602"> Cambrige Bicycle Accidents - 2012</p>
+        <div align="left"><button id="bicyclingLayer"> Enable Bicycling Layer </button></div>
+        <br></br>
+        <div id="canvas-container">
+          <canvas id="myChart"></canvas>
+        </div>
+        <br></br>
+        
+        <p id="address" align="center" style="font-size:12pt;font-family:Arial;font-weight:bold; color:#FA8602"></p>
+        <div id="street-view"> </div>
+      </div>
+      <div id="map"></div>
+</body>
+</html>
+    

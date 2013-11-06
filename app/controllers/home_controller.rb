@@ -39,4 +39,7 @@ class HomeController < ApplicationController
 	def connected
 	end
 
+	def cambridgeBikes
+	end
+
 end

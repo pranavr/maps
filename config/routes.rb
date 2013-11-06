@@ -14,6 +14,7 @@ VizmapsProj::Application.routes.draw do
   match '/awake' => "home#awake"
   match '/touchLines' => "home#touchLines"
   match '/connected' => "home#connected"
+  match '/cambridgeBikes' => "home#cambridgeBikes"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

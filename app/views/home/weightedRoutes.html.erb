@@ -26,6 +26,12 @@ var mapCenter = new google.maps.LatLng(42.365551,-71.103911);
 var directionsService = new google.maps.DirectionsService();
 
 
+function shuffle(o){ //v1.0
+    for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
+};
+
+
 function initialize() {
       
 
@@ -79,8 +85,11 @@ var stations = {
 
 
       var map = new google.maps.Map(document.getElementById("map_canvas"), {
-        zoom: 15,
+        zoom: 14,
         center: mapCenter,
+        zoomControl: false,
+        panControl:true,
+        scaleControl:true,
         mapTypeId: google.maps.MapTypeId.ROAD
       });
 
@@ -95,9 +104,54 @@ var stations = {
             { "gamma": 1.26 },
             { "lightness": 100 }
           ]
+        },
+        { "featureType": "poi",
+          "stylers": [
+          {"visibility": "off"}
+          ]
         }
       ]
-      map.setOptions({styles: styles});
+
+      var styles2 = [
+    {
+        "featureType": "landscape",
+        "stylers": [
+          { "visibility": "simplified" },
+          { "color": "#FFFFFF" }
+        ]
+      },{
+        "featureType": "poi",
+        "stylers": [
+          { "visibility": "off" },
+          { "color": "#FFFFFF" }
+        ]
+      },{
+        "featureType": "road",
+        "stylers": [
+          { "visibility": "off" },
+          { "color": "#FFFFFF" },
+          { "lightness": 4 }
+        ]
+      },{
+        "elementType": "labels",
+        "stylers": [
+          { "visibility": "off" }
+        ]
+      },{
+        "featureType": "water",
+        "stylers": [
+          { "hue": "#109BE0" },
+          { "color": "#109BE0" }
+        ]
+      },
+       { "featureType": "poi",
+          "stylers": [
+          {"visibility": "off"}
+          ]
+        }
+
+    ]
+      map.setOptions({styles: styles2});
 
       //console.log("data length = "+ CDataPop.length);
 
@@ -213,7 +267,6 @@ var stations = {
         //console.log(stations[station]);
         
 
-        
             var pointCenter = stations[station];
             var dim = 2000;
             var half_width = dim/2;
@@ -239,16 +292,16 @@ var stations = {
                         //console.log(cellCenter);
 
                   
-                        // gridCircles  =  new google.maps.Circle({
-                        //         strokeColor: color,
-                        //         strokeOpacity: 0,
-                        //         strokeWeight: 0,
-                        //         fillColor: color,
-                        //         fillOpacity: 0,
-                        //         map: map,
-                        //         center: cellCenter,
-                        //         radius: 10
-                        //   });
+                        gridCircles  =  new google.maps.Circle({
+                                strokeColor: color,
+                                strokeOpacity: 0,
+                                strokeWeight: 0,
+                                fillColor: color,
+                                fillOpacity: 0,
+                                map: map,
+                                center: cellCenter,
+                                radius: 10
+                          });
 
                         var sum = 0;
                         var count = 0;
@@ -298,6 +351,7 @@ var stations = {
                         var NE = google.maps.geometry.spherical.computeOffset(NE,cellwidth,90)
                       }
               }
+              cellInfo[station] = shuffle(cellInfo[station]);
 
 
       }
@@ -324,8 +378,9 @@ var stations = {
             
 
             console.log("current Station = " + currentStation + " current Index = " + currentIndex);
-
-            setTimeout(drawRoute,5000);
+            //setTimeout(map.setZoom(13), 500);
+            
+            setTimeout(drawRoute,3000);
           } else {
             sIndex++;
             currentIndex = 0;
@@ -344,6 +399,10 @@ var stations = {
 
       function drawRoute(){
 
+        //map.panTo(cellInfo[currentStation][currentIndex][0]);
+        //zoomTo()
+       // map.setCenter(cellInfo[currentStation][currentIndex][0]);
+        //map.setCenter(centers[currentStation]);
         var request = {
                 origin: cellInfo[currentStation][currentIndex][0],
                 destination:centers[currentStation],
@@ -351,7 +410,7 @@ var stations = {
             };
           
             var rendererOptions = {
-                preserveViewport: true,
+                preserveViewport: false,
                 suppressMarkers:true,
                 routeIndex: currentIndex
             };
@@ -359,10 +418,12 @@ var stations = {
 
             directionsService.route(request, function(response,status){
               if (status == google.maps.DirectionsStatus.OK){
+                console.log(response);
                 var polylineOptionsActual = new google.maps.Polyline({
-                  strokeColor: 'blue',
-                  strokeOpacity: cellInfo[currentStation][currentIndex][1],
-                  strokeWeight: 2
+                  strokeColor: 'red',
+                  strokeOpacity: cellInfo[currentStation][currentIndex][1]+0.4,
+                  strokeWeight: 5,
+
                 });
 
                 
@@ -381,7 +442,6 @@ var stations = {
             if (currentIndex == cellInfo[currentStation].length && sIndex ==3){
               console.log("done!");
             } else {
-              
               caller();
             }
       }
@@ -447,7 +507,7 @@ var stations = {
 }
 
 
-google.maps.event.addDomListener(window, 'load', initialize);
+google.maps.event.addDomListener(window, 'load', setTimeout(initialize,10000));
 
 
 
@@ -459,5 +519,4 @@ google.maps.event.addDomListener(window, 'load', initialize);
 
 
 <body>
-  <h1 align="center"> Population Weighted Routes </h1>
-  <div id="map_canvas" style="width:100%; height:2000px;"></div>
+  <div id="map_canvas" style="width:100%; height:500px;"></div>
